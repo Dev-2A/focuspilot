@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>FocusPilot</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <header class="wrap header">
+    <div class="brand">
+      <h1>FocusPilot</h1>
+      <p class="muted">오늘: <b>{{ date }}</b> · <a href="/report">리포트</a></p>
+    </div>
+
+    <!-- ✅ 다음 행동 1줄 가이드 (클릭하면 해당 카드로 이동) -->
+    <div class="statusBar" id="statusBar"
+         data-goals-count="{{ goals|length }}"
+         data-sessions-count="{{ sessions|length }}"
+         data-distractions-count="{{ distractions|length }}">
+      <span class="statusDot" aria-hidden="true"></span>
+      <span class="statusText" id="statusText">오늘의 다음 행동을 준비 중…</span>
+      <span class="statusHint" id="statusHint"></span>
+    </div>
+  </header>
+
+  <main class="wrap grid">
+    <!-- 타이머 -->
+    <section class="card" id="cardTimer">
+      <div class="cardHead">
+        <h2>타이머</h2>
+        <div class="cardHeadRight">
+          <span id="modePill" class="pill">Focus</span>
+          <button id="settingsBtn" class="iconBtn" type="button" aria-label="설정">⚙</button>
+        </div>
+      </div>
+
+      <!-- 설정(미니멀) -->
+      <div id="settingsPanel" class="settingsPanel hidden">
+        <label class="setting">
+          <input id="optSound" type="checkbox" />
+          소리
+        </label>
+        <label class="setting">
+          <input id="optNotify" type="checkbox" />
+          데스크톱 알림
+        </label>
+        <label class="setting">
+          <input id="optAutoBreak" type="checkbox" />
+          자동 휴식
+        </label>
+      </div>
+
+      <div class="timer">
+        <div id="timerDisplay" class="timerDisplay">25:00</div>
+
+        <div class="timerButtons">
+          <button id="startBtn" class="btn btnPrimary" type="button">Start</button>
+          <button id="pauseBtn" class="btn btnGhost" type="button" disabled>Pause</button>
+          <button id="finishBtn" class="btn btnGhost" type="button" disabled>Finish</button>
+        </div>
+
+        <div class="timerFields">
+          <label class="muted">집중(분)</label>
+          <input id="focusMinutes" type="number" min="1" max="180" value="25" />
+          <label class="muted">휴식(분)</label>
+          <input id="breakMinutes" type="number" min="1" max="60" value="5" />
+        </div>
+      </div>
+
+      <form id="sessionForm" action="/sessions" method="post" class="hidden">
+        <input type="hidden" name="start_ts" id="sessionStartTs" />
+        <input type="hidden" name="end_ts" id="sessionEndTs" />
+        <input type="hidden" name="minutes" id="sessionMinutes" />
+      </form>
+
+      <p class="muted small timerNote">
+        0초가 되면 자동으로 세션이 기록된다. (이제 Finish 까먹어도 된다. 👌)
+      </p>
+    </section>
+
+    <!-- 오늘의 3개 목표 -->
+    <section class="card" id="cardGoals">
+      <div class="cardHead">
+        <h2>오늘의 3개 목표</h2>
+        <span class="pill">Top 3</span>
+      </div>
+
+      <form action="/goals" method="post" class="stack">
+        <input id="goal1" name="g1" placeholder="목표 1" value="{{ goals[0].title if goals|length>0 else '' }}" />
+        <input id="goal2" name="g2" placeholder="목표 2" value="{{ goals[1].title if goals|length>1 else '' }}" />
+        <input id="goal3" name="g3" placeholder="목표 3" value="{{ goals[2].title if goals|length>2 else '' }}" />
+        <button class="btn btnSoft btnWide" type="submit">저장</button>
+      </form>
+
+      <div class="list">
+        {% for g in goals %}
+          <form action="/goals/{{ g.id }}/toggle" method="post" class="row between goalRow">
+            <div class="goalLeft">
+              <span class="badge">{{ "DONE" if g.done==1 else "TODO" }}</span>
+              <span class="{{ 'done' if g.done==1 else '' }}">{{ g.title }}</span>
+            </div>
+            <button class="btn btnGhost btnSm" type="submit">{{ "되돌리기" if g.done==1 else "완료" }}</button>
+          </form>
+        {% endfor %}
+        {% if goals|length == 0 %}
+          <p class="muted small">아직 목표가 없다. 목표 1개만 써도 승리다.</p>
+        {% endif %}
+      </div>
+    </section>
+
+    <!-- 방해요소 기록 -->
+    <section class="card" id="cardDistractions">
+      <div class="cardHead">
+        <h2>방해요소 기록</h2>
+        <span class="pill">Interrupt</span>
+      </div>
+
+      <form action="/distractions" method="post" class="distractionForm">
+        <input id="distractionNote" name="note" placeholder="예: 슬랙 확인, 유튜브, 갑자기 청소" maxlength="200" />
+        <button class="btn btnSoft btnFixed" type="submit">기록</button>
+      </form>
+
+      <div class="list">
+        {% for d in distractions %}
+          <div class="row between">
+            <span class="muted small mono">{{ d.ts }}</span>
+            <span>{{ d.note }}</span>
+          </div>
+        {% endfor %}
+        {% if distractions|length == 0 %}
+          <p class="muted small">아직 방해요소가 없다…? 너 오늘 컨디션 좋은데?</p>
+        {% endif %}
+      </div>
+    </section>
+
+    <!-- 오늘의 집중 세션 -->
+    <section class="card" id="cardSessions">
+      <div class="cardHead">
+        <h2>오늘의 집중 세션</h2>
+        <span class="pill">Sessions</span>
+      </div>
+
+      <div class="list">
+        {% for s in sessions %}
+          <div class="row between">
+            <span class="muted small mono">{{ s.start_ts }} → {{ s.end_ts }}</span>
+            <b>{{ s.minutes }}분</b>
+          </div>
+        {% endfor %}
+        {% if sessions|length == 0 %}
+          <p class="muted small">세션이 아직 없다. 5분만 해도 기록하자.</p>
+        {% endif %}
+      </div>
+    </section>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

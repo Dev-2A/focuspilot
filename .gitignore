@@ -1,0 +1,78 @@
+# ===== OS / Editor =====
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ===== Python =====
+__pycache__/
+*.py[cod]
+*$py.class
+
+.venv/
+venv/
+ENV/
+env/
+
+# pip/packaging
+pip-wheel-metadata/
+*.egg-info/
+.eggs/
+dist/
+build/
+wheels/
+*.whl
+
+# Testing / coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+
+# Type check / lint
+.mypy_cache/
+.pyright/
+ruff_cache/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# ===== Web / assets cache =====
+node_modules/
+*.log
+
+# ===== App runtime files =====
+# SQLite DB (로컬 데이터 보관용이면 커밋 X)
+*.db
+*.sqlite
+*.sqlite3
+
+# If you store DB in a specific filename, this also covers it:
+focuspilot.db
+
+# Runtime / temp
+*.pid
+*.tmp
+*.temp
+tmp/
+temp/
+logs/
+*.log
+
+# ===== Secrets / env =====
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+
+# ===== Windows Python build artifacts =====
+*.pyd

@@ -1,0 +1,331 @@
+:root{
+  --bg0:#070b14;
+  --bg1:#0b1430;
+
+  --card: rgba(18, 29, 58, 0.78);
+  --card2: rgba(12, 23, 48, 0.88);
+
+  --stroke: rgba(148, 188, 255, 0.16);
+  --stroke2: rgba(148, 188, 255, 0.10);
+
+  --text:#e9eefc;
+  --muted:#b8c6e8;
+
+  --accent:#6aa8ff;
+
+  --r: 16px;
+  --r2: 12px;
+}
+
+*{ box-sizing: border-box; }
+html, body{ height: 100%; }
+
+body{
+  margin:0;
+  color:var(--text);
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans KR", sans-serif;
+  background:
+    radial-gradient(900px 420px at 12% -10%, rgba(106,168,255,.14), transparent 60%),
+    radial-gradient(700px 360px at 88% 8%, rgba(106,168,255,.10), transparent 55%),
+    linear-gradient(180deg, var(--bg0), var(--bg1));
+}
+
+a{ color: var(--accent); text-decoration:none; }
+a:hover{ text-decoration:underline; }
+
+.wrap{
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 22px;
+}
+
+.header{ padding-bottom: 12px; }
+
+.brand h1{
+  margin: 2px 0 6px;
+  font-size: 30px;
+  letter-spacing: .2px;
+}
+
+h2{
+  margin: 0;
+  font-size: 18px;
+  letter-spacing: .2px;
+}
+
+.muted{ color: var(--muted); }
+.small{ font-size: 12px; opacity: .95; }
+.mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+
+.grid{
+  display:grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+@media (min-width: 920px){
+  .grid{ grid-template-columns: 1fr 1fr; }
+}
+
+.card{
+  background: linear-gradient(180deg, var(--card), var(--card2));
+  border: 1px solid var(--stroke);
+  border-radius: var(--r);
+  padding: 16px 16px 14px;
+  box-shadow: 0 10px 35px rgba(0,0,0,.28);
+}
+
+.cardHead{
+  display:flex;
+  align-items:center;
+  justify-content: space-between;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(148, 188, 255, 0.10);
+  margin-bottom: 14px;
+}
+
+.cardHeadRight{
+  display:flex;
+  align-items:center;
+  gap: 10px;
+}
+
+.pill{
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(148,188,255,.18);
+  background: rgba(10, 18, 40, .25);
+  color: var(--muted);
+}
+
+.iconBtn{
+  height: 28px;
+  width: 28px;
+  border-radius: 10px;
+  border: 1px solid rgba(148,188,255,.14);
+  background: rgba(255,255,255,.05);
+  color: var(--muted);
+  cursor: pointer;
+}
+.iconBtn:hover{
+  background: rgba(255,255,255,.08);
+  border-color: rgba(148,188,255,.20);
+}
+
+.row{
+  display:flex;
+  gap: 10px;
+  align-items:center;
+}
+.between{ justify-content: space-between; }
+.stack{ display:grid; gap: 10px; }
+.list{ margin-top: 12px; display:grid; gap: 10px; }
+
+/* Inputs */
+input{
+  width: 100%;
+  height: 44px;
+  padding: 11px 12px;
+  border-radius: var(--r2);
+  border: 1px solid var(--stroke2);
+  background: rgba(10, 18, 40, 0.65);
+  color: var(--text);
+  outline: none;
+}
+input::placeholder{ color: rgba(184,198,232,.65); }
+input:focus{
+  border-color: rgba(106,168,255,.45);
+  box-shadow: 0 0 0 4px rgba(106,168,255,.10);
+}
+
+/* Buttons */
+.btn{
+  height: 44px;
+  padding: 10px 14px;
+  border-radius: var(--r2);
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform .06s ease, background .15s ease, border-color .15s ease, opacity .15s ease;
+  border: 1px solid rgba(148,188,255,.16);
+  color: var(--text);
+  background: rgba(255,255,255,.06);
+}
+.btn:active{ transform: translateY(1px); }
+.btn:disabled{ opacity: .55; cursor: not-allowed; }
+
+.btnWide{ width: 100%; }
+.btnSm{ height: 36px; padding: 6px 10px; font-weight: 700; }
+
+.btnFixed{
+  min-width: 96px;
+  white-space: nowrap; /* 버튼 세로 줄바꿈 방지 */
+}
+
+.btnPrimary{
+  background: rgba(106,168,255,.18);
+  border-color: rgba(106,168,255,.38);
+}
+.btnPrimary:hover{ background: rgba(106,168,255,.24); }
+
+.btnGhost{
+  background: rgba(255,255,255,.04);
+  border-color: rgba(148,188,255,.12);
+}
+.btnGhost:hover{
+  background: rgba(255,255,255,.07);
+  border-color: rgba(148,188,255,.18);
+}
+
+.btnSoft{
+  background: rgba(255,255,255,.05);
+  border-color: rgba(148,188,255,.14);
+}
+.btnSoft:hover{
+  background: rgba(255,255,255,.09);
+  border-color: rgba(148,188,255,.20);
+}
+
+/* Settings panel */
+.settingsPanel{
+  display:flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  align-items:center;
+  margin: 6px 0 14px;
+  padding: 10px 12px;
+  border-radius: var(--r2);
+  border: 1px solid rgba(148,188,255,.10);
+  background: rgba(10, 18, 40, 0.35);
+}
+.setting{
+  display:flex;
+  gap: 8px;
+  align-items:center;
+  color: var(--muted);
+  font-size: 13px;
+}
+.setting input{ width: 16px; height: 16px; margin: 0; }
+
+/* Timer */
+.timer{ display:grid; gap: 12px; }
+
+.timerDisplay{
+  font-size: 46px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  line-height: 1;
+  margin-top: 6px;
+}
+
+.timerButtons{ display:flex; gap: 10px; }
+.timerButtons .btn{ min-width: 92px; }
+
+.timerFields{
+  display: grid;
+  grid-template-columns: auto 96px auto 96px;
+  gap: 10px;
+  align-items: center;
+}
+.timerFields label{ white-space: nowrap; opacity: .92; }
+.timerFields input{ width: 96px; }
+
+@media (max-width: 520px){
+  .timerButtons{ flex-wrap: wrap; }
+  .timerFields{ grid-template-columns: auto 1fr; }
+  .timerFields input{ width: 100%; }
+}
+
+/* Goal row */
+.goalRow{
+  padding: 8px 10px;
+  border-radius: var(--r2);
+  border: 1px solid var(--stroke2);
+  background: rgba(10, 18, 40, 0.35);
+}
+.goalLeft{
+  display:flex;
+  align-items:center;
+  gap: 6px;
+  min-width: 0;
+}
+.badge{
+  display:inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(148,188,255,.16);
+  font-size: 12px;
+  color: var(--muted);
+  background: rgba(10, 18, 40, .35);
+}
+.done{ text-decoration: line-through; opacity: .82; }
+
+/* Distraction form */
+.distractionForm{
+  display:flex;
+  gap: 10px;
+  align-items:center;
+}
+.distractionForm input{ flex: 1 1 auto; }
+
+/* Note */
+.timerNote{
+  margin-top: 10px;
+  line-height: 1.5;
+}
+
+.hidden{ display:none; }
+
+/* StatusBar: 다음 행동 1줄 가이드 (ADHD 친화) */
+.statusBar{
+  margin-top: 14px;
+  display:flex;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(148,188,255,.12);
+  background: rgba(10, 18, 40, 0.28);
+}
+
+.statusDot{
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(106,168,255,.60);
+  flex: 0 0 auto;
+}
+
+.statusText{
+  font-weight: 700;
+  letter-spacing: .1px;
+}
+
+.statusHint{
+  margin-left: auto;
+  color: rgba(184,198,232,.85);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+@media (max-width: 700px){
+  .statusBar{ align-items: flex-start; }
+  .statusHint{
+    margin-left: 0;
+    white-space: normal;
+    line-height: 1.35;
+  }
+}
+
+/* StatusBar 클릭 가능 표시(미니멀) */
+.statusBar{
+  user-select: none;
+}
+.statusBar:hover{
+  border-color: rgba(106,168,255,.20);
+}
+
+/* 카드로 이동했을 때 “여기!” 표시 */
+.flash{
+  outline: 2px solid rgba(106,168,255,.28);
+  outline-offset: 2px;
+}

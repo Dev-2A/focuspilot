@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>FocusPilot - Report</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <header class="wrap">
+    <h1>오늘 리포트</h1>
+    <p class="muted"><b>{{ summary.date }}</b> · <a href="/">돌아가기</a></p>
+  </header>
+
+  <main class="wrap grid">
+    <section class="card">
+      <h2>KPI</h2>
+      <div class="kpi">
+        <div><span class="muted">총 집중시간</span><b>{{ summary.total_minutes }}분</b></div>
+        <div><span class="muted">세션 수</span><b>{{ summary.session_count }}</b></div>
+        <div><span class="muted">방해요소</span><b>{{ summary.distraction_count }}</b></div>
+        <div><span class="muted">목표</span><b>{{ summary.goals_done }}/{{ summary.goals_total }}</b></div>
+      </div>
+      <p class="muted small">오늘의 승리는 "조금이라도 기록했다"다. 기록은 증거고, 증거는 개선으로 이어진다.</p>
+    </section>
+
+    <section class="card">
+      <h2>방해요소 TOP 5</h2>
+      <div class="list">
+        {% for t in summary.top_distractions %}
+          <div class="row between">
+            <span>{{ t.note }}</span>
+            <b>{{ t.c }}</b>
+          </div>
+        {% endfor %}
+        {% if summary.top_distractions|length == 0 %}
+          <p class="muted small">TOP 방해요소 없음. (혹시... 기록을 안 한 거 면... 그건... 음...🤐)</p>
+        {% endif %}
+      </div>
+    </section>
+  </main>
+</body>
+</html>
