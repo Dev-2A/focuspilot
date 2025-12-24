@@ -329,3 +329,93 @@ input:focus{
   outline: 2px solid rgba(106,168,255,.28);
   outline-offset: 2px;
 }
+
+/* ===== Report v0.2 ===== */
+.reportControls{
+  margin-top: 12px;
+  display:flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.reportForm{
+  display:flex;
+  gap: 10px;
+  align-items:center;
+}
+.dateInput{
+  height: 36px;
+  padding: 6px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(148,188,255,.12);
+  background: rgba(10, 18, 40, 0.45);
+  color: var(--text);
+}
+
+.summaryGrid{
+  display:grid;
+  grid-template-columns: repeat(2, minmax(0,1fr));
+  gap: 12px;
+}
+@media (min-width: 920px){
+  .summaryGrid{ grid-template-columns: repeat(4, minmax(0,1fr)); }
+}
+.summaryItem{
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(148,188,255,.10);
+  background: rgba(10, 18, 40, 0.25);
+}
+.summaryValue{
+  font-size: 20px;
+  font-weight: 900;
+  margin-top: 4px;
+}
+
+.progressWrap{ margin-top: 14px; }
+.progressBar{
+  width: 100%;
+  height: 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(148,188,255,.12);
+  background: rgba(255,255,255,.04);
+  overflow: hidden;
+}
+.progressBar.small{ height: 8px; }
+.progressFill{
+  height: 100%;
+  background: rgba(106,168,255,.45);
+  border-radius: 999px;
+}
+
+.weekTable{
+  display:grid;
+  gap: 10px;
+}
+.weekRow{
+  display:grid;
+  grid-template-columns: 140px 90px 70px 70px 90px 1fr;
+  gap: 10px;
+  align-items:center;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(148,188,255,.10);
+  background: rgba(10, 18, 40, 0.25);
+}
+.weekHead{
+  background: rgba(10, 18, 40, 0.38);
+  color: rgba(184,198,232,.9);
+  font-size: 12px;
+  border-color: rgba(148,188,255,.12);
+}
+@media (max-width: 920px){
+  .weekRow{
+    grid-template-columns: 1fr 70px 60px 60px 80px 1fr;
+  }
+}
+@media (max-width: 640px){
+  .weekRow{
+    grid-template-columns: 1fr 60px 50px 50px 70px 1fr;
+    font-size: 12px;
+  }
+}

@@ -1,43 +1,186 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ko">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>FocusPilot - Report</title>
+  <title>{{ app_name }} · Report</title>
   <link rel="stylesheet" href="/static/style.css" />
 </head>
 <body>
-  <header class="wrap">
-    <h1>오늘 리포트</h1>
-    <p class="muted"><b>{{ summary.date }}</b> · <a href="/">돌아가기</a></p>
+  <header class="wrap header">
+    <div class="brand">
+      <h1>{{ app_name }}</h1>
+      <p class="muted">
+        <a href="/">홈으로</a>
+      </p>
+    </div>
+
+    <!-- v0.2: 날짜 선택 -->
+    <div class="reportControls">
+      <form class="reportForm" method="get" action="/report">
+        <input class="dateInput" type="date" name="date" value="{{ date }}" />
+        <input type="hidden" name="range" value="day" />
+        <button class="btn btnSoft btnFixed" type="submit">일간 보기</button>
+      </form>
+
+      <form class="reportForm" method="get" action="/report">
+        <input class="dateInput" type="date" name="date" value="{{ date }}" />
+        <input type="hidden" name="range" value="week" />
+        <button class="btn btnSoft btnFixed" type="submit">주간 보기</button>
+      </form>
+
+      <div class="reportQuick">
+        <a class="pill" href="/report?date={{ date }}&range=day">Today</a>
+        <a class="pill" href="/report?date={{ (date | replace(date[8:10], (date[8:10] | int - 1) | string)) }}&range=day" style="display:none;"></a>
+        <!-- 위 'Yesterday'는 템플릿에서 날짜 계산이 애매해서 JS 없이 숨김 처리.
+             필요하면 run.py에서 yesterday 링크를 내려주도록 바꿀 수 있어. -->
+      </div>
+    </div>
   </header>
 
   <main class="wrap grid">
+    <!-- Summary -->
     <section class="card">
-      <h2>KPI</h2>
-      <div class="kpi">
-        <div><span class="muted">총 집중시간</span><b>{{ summary.total_minutes }}분</b></div>
-        <div><span class="muted">세션 수</span><b>{{ summary.session_count }}</b></div>
-        <div><span class="muted">방해요소</span><b>{{ summary.distraction_count }}</b></div>
-        <div><span class="muted">목표</span><b>{{ summary.goals_done }}/{{ summary.goals_total }}</b></div>
+      <div class="cardHead">
+        <h2>{% if mode == "week" %}주간 요약{% else %}일간 요약{% endif %}</h2>
+        <span class="pill">{{ date }}</span>
       </div>
-      <p class="muted small">오늘의 승리는 "조금이라도 기록했다"다. 기록은 증거고, 증거는 개선으로 이어진다.</p>
+
+      <div class="summaryGrid">
+        <div class="summaryItem">
+          <div class="muted small">집중 시간</div>
+          <div class="summaryValue">{{ summary.focus_min }}분</div>
+        </div>
+        <div class="summaryItem">
+          <div class="muted small">세션 수</div>
+          <div class="summaryValue">{{ summary.session_count }}</div>
+        </div>
+        <div class="summaryItem">
+          <div class="muted small">방해요소</div>
+          <div class="summaryValue">{{ summary.distractions }}</div>
+        </div>
+        <div class="summaryItem">
+          <div class="muted small">목표 완료</div>
+          <div class="summaryValue">{{ summary.goal_done }}/{{ summary.goal_total }}</div>
+        </div>
+      </div>
+
+      <!-- v0.2: 목표 완료율 그래프(미니멀 progress bar) -->
+      <div class="progressWrap">
+        <div class="row between">
+          <span class="muted small">목표 완료율</span>
+          <b>{{ summary.goal_pct }}%</b>
+        </div>
+        <div class="progressBar" role="progressbar" aria-valuenow="{{ summary.goal_pct }}" aria-valuemin="0" aria-valuemax="100">
+          <div class="progressFill" style="width: {{ summary.goal_pct }}%"></div>
+        </div>
+        <p class="muted small" style="margin:8px 0 0;">
+          목표가 0개인 날은 0%로 표시한다. (통계를 속이지 않는다. 😎)
+        </p>
+      </div>
     </section>
 
-    <section class="card">
-      <h2>방해요소 TOP 5</h2>
-      <div class="list">
-        {% for t in summary.top_distractions %}
-          <div class="row between">
-            <span>{{ t.note }}</span>
-            <b>{{ t.c }}</b>
+    {% if mode == "day" %}
+      <!-- Day: Goals -->
+      <section class="card">
+        <div class="cardHead">
+          <h2>목표</h2>
+          <span class="pill">Day</span>
+        </div>
+
+        <div class="list">
+          {% for g in goals %}
+            <div class="row between">
+              <span class="{{ 'done' if g.done==1 else '' }}">{{ g.title }}</span>
+              <span class="badge">{{ "DONE" if g.done==1 else "TODO" }}</span>
+            </div>
+          {% endfor %}
+          {% if goals|length == 0 %}
+            <p class="muted small">이 날짜에는 목표 기록이 없다.</p>
+          {% endif %}
+        </div>
+      </section>
+
+      <!-- Day: Sessions -->
+      <section class="card">
+        <div class="cardHead">
+          <h2>세션</h2>
+          <span class="pill">Day</span>
+        </div>
+
+        <div class="list">
+          {% for s in sessions %}
+            <div class="row between">
+              <span class="muted small mono">{{ s.start_ts }} → {{ s.end_ts }}</span>
+              <b>{{ s.minutes }}분</b>
+            </div>
+          {% endfor %}
+          {% if sessions|length == 0 %}
+            <p class="muted small">이 날짜에는 세션 기록이 없다.</p>
+          {% endif %}
+        </div>
+      </section>
+
+      <!-- Day: Distractions -->
+      <section class="card">
+        <div class="cardHead">
+          <h2>방해요소</h2>
+          <span class="pill">Day</span>
+        </div>
+
+        <div class="list">
+          {% for d in distractions %}
+            <div class="row between">
+              <span class="muted small mono">{{ d.ts }}</span>
+              <span>{{ d.note }}</span>
+            </div>
+          {% endfor %}
+          {% if distractions|length == 0 %}
+            <p class="muted small">이 날짜에는 방해요소 기록이 없다.</p>
+          {% endif %}
+        </div>
+      </section>
+
+    {% else %}
+      <!-- Week: Table -->
+      <section class="card" style="grid-column: 1 / -1;">
+        <div class="cardHead">
+          <h2>최근 7일</h2>
+          <span class="pill">Week</span>
+        </div>
+
+        <div class="weekTable">
+          <div class="weekRow weekHead">
+            <div>날짜</div>
+            <div>집중(분)</div>
+            <div>세션</div>
+            <div>방해</div>
+            <div>목표</div>
+            <div>완료율</div>
           </div>
-        {% endfor %}
-        {% if summary.top_distractions|length == 0 %}
-          <p class="muted small">TOP 방해요소 없음. (혹시... 기록을 안 한 거 면... 그건... 음...🤐)</p>
-        {% endif %}
-      </div>
-    </section>
+
+          {% for r in week_rows %}
+            <div class="weekRow">
+              <div class="mono">{{ r.date }}</div>
+              <div><b>{{ r.focus_min }}</b></div>
+              <div>{{ r.session_count }}</div>
+              <div>{{ r.distractions }}</div>
+              <div>{{ r.goal_done }}/{{ r.goal_total }}</div>
+              <div>
+                <div class="progressBar small">
+                  <div class="progressFill" style="width: {{ r.goal_pct }}%"></div>
+                </div>
+                <span class="muted small">{{ r.goal_pct }}%</span>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+
+        <p class="muted small" style="margin-top:10px;">
+          팁: 주간 완료율은 “주간 목표 합산 기준”으로 계산한다. (하루 목표 수가 달라도 공정)
+        </p>
+      </section>
+    {% endif %}
   </main>
 </body>
 </html>
