@@ -3,10 +3,16 @@ const LS = {
   sound: "fp_opt_sound",
   notify: "fp_opt_notify",
   autoBreak: "fp_opt_autobreak",
+
   mode: "fp_mode",                 // "focus" | "break"
-  pendingBreak: "fp_pending_break",// "1"이면 리로드 후 휴식 이어서 시작
+
+  // auto-break (자동 시작) 용
+  pendingBreak: "fp_pending_break", // "1"이면 리로드 후 break 자동 시작
   breakStartMs: "fp_break_start_ms",
   breakTotalSec: "fp_break_total_sec",
+
+  // manual-break (대기) 용: break 모드에서 아직 시작 안 했을 때 표시할 남은 시간
+  breakReadySec: "fp_break_ready_sec",
 };
 
 function lsGetBool(key, defVal) {
@@ -28,39 +34,24 @@ function lsDel(key) {
   localStorage.removeItem(key);
 }
 
-// ====== DOM helpers ======
 const el = (id) => document.getElementById(id);
 
 // ====== 카드 이동/포커스 ======
 function scrollToCard(cardId) {
   const node = el(cardId);
   if (!node) return;
-
   node.scrollIntoView({ behavior: "smooth", block: "start" });
-
-  // “여기!” 표시 (ADHD용 시선 고정)
   node.classList.add("flash");
   setTimeout(() => node.classList.remove("flash"), 650);
 }
-
 function focusForTarget(cardId) {
-  // 카드에 따라 자동 포커스 대상 지정
   let target = null;
-
-  if (cardId === "cardGoals") {
-    target = el("goal1") || el("goal2") || el("goal3");
-  } else if (cardId === "cardDistractions") {
-    target = el("distractionNote");
-  } else if (cardId === "cardTimer") {
-    target = el("startBtn");
-  }
+  if (cardId === "cardGoals") target = el("goal1") || el("goal2") || el("goal3");
+  else if (cardId === "cardDistractions") target = el("distractionNote");
+  else if (cardId === "cardTimer") target = el("startBtn");
 
   if (!target) return;
-
-  // 스크롤 애니메이션 끝날 때쯤 포커스
-  setTimeout(() => {
-    try { target.focus(); } catch (_) {}
-  }, 350);
+  setTimeout(() => { try { target.focus(); } catch (_) {} }, 350);
 }
 
 // ====== 타이머 ======
@@ -104,7 +95,6 @@ function updateStatusBar(extra = {}) {
   const distractionsCount = parseInt(bar.dataset.distractionsCount || "0", 10);
 
   const running = !!timerId;
-  const autoBreak = lsGetBool(LS.autoBreak, false);
 
   const statusText = el("statusText");
   const statusHint = el("statusHint");
@@ -126,12 +116,11 @@ function updateStatusBar(extra = {}) {
       hint = "물 한 잔. 스트레칭. (딴 짓은 금지, 그건 휴식이 아니라 납치야.)";
     }
   } else {
-    const pendingBreak = lsGetStr(LS.pendingBreak, "0") === "1" && autoBreak && lsGetStr(LS.mode, "focus") === "break";
-
-    if (pendingBreak) {
+    // ✅ 모드 전환이 항상 존재하도록: break 모드면 휴식 안내가 우선
+    if (m === "break") {
       target = "cardTimer";
-      main = "휴식이 대기 중이야. Start를 눌러 휴식을 시작해.";
-      hint = "휴식 끝나면 다시 집중으로 돌아올 수 있게 도와줄게.";
+      main = "휴식 모드야. Start를 눌러 휴식을 시작해.";
+      hint = "휴식이 끝나면 Focus로 자동 전환돼.";
     } else if (sessionsCount === 0) {
       if (goalsCount === 0) {
         target = "cardGoals";
@@ -143,15 +132,12 @@ function updateStatusBar(extra = {}) {
         hint = "완벽한 준비보다 시작이 먼저.";
       }
     } else {
-      // 세션 있는 날
       target = (goalsCount === 0) ? "cardGoals" : "cardTimer";
-
       if (goalsCount > 0) {
         main = `오늘 ${sessionsCount}개 세션 기록됨. 다음은 5분만 해도 OK.`;
       } else {
         main = `오늘 ${sessionsCount}개 세션 기록됨. 목표 1개만 적어도 좋아.`;
       }
-
       if (distractionsCount > 0) {
         hint = `방해요소 ${distractionsCount}개 기록됨. 다음엔 “한 줄 기록 → 복귀”만 하면 된다.`;
       } else {
@@ -162,8 +148,6 @@ function updateStatusBar(extra = {}) {
 
   statusText.textContent = main;
   statusHint.textContent = hint;
-
-  // ✅ 클릭 이동 대상 저장
   bar.dataset.target = target;
 }
 
@@ -191,10 +175,8 @@ function ensureAudioCtx() {
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   }
 }
-
 function beep() {
   if (!lsGetBool(LS.sound, true)) return;
-
   try {
     ensureAudioCtx();
     const o = audioCtx.createOscillator();
@@ -215,11 +197,9 @@ function beep() {
     o.stop(t + 0.24);
   } catch (_) {}
 }
-
 function notify(title, body) {
   if (!lsGetBool(LS.notify, false)) return;
   if (!("Notification" in window)) return;
-
   if (Notification.permission === "granted") {
     try { new Notification(title, { body }); } catch (_) {}
   }
@@ -256,25 +236,21 @@ function loadSettingsUI() {
       lsSetBool(LS.notify, false);
       return;
     }
-
     if (!want) {
       lsSetBool(LS.notify, false);
       return;
     }
-
     if (Notification.permission === "granted") {
       lsSetBool(LS.notify, true);
       notify("FocusPilot", "데스크톱 알림이 켜졌어.");
       return;
     }
-
     if (Notification.permission === "denied") {
       alert("브라우저 알림이 차단돼 있어. 브라우저 설정에서 허용으로 바꿔야 해.");
       e.target.checked = false;
       lsSetBool(LS.notify, false);
       return;
     }
-
     try {
       const perm = await Notification.requestPermission();
       if (perm === "granted") {
@@ -295,6 +271,58 @@ function loadSettingsUI() {
   });
 }
 
+// ====== 모드/저장 헬퍼 ======
+function prepareBreakPending(sec) {
+  // ✅ 자동휴식 OFF에서도 break 모드가 "대기"로 존재해야 함
+  lsSetStr(LS.mode, "break");
+  lsSetStr(LS.breakReadySec, String(sec));
+
+  // auto-start 플래그는 제거(수동 시작)
+  lsDel(LS.pendingBreak);
+  lsDel(LS.breakStartMs);
+  lsDel(LS.breakTotalSec);
+}
+
+function prepareBreakAutoStart(totalSec) {
+  // autoBreak ON일 때: 리로드 후 break 자동 시작
+  lsSetStr(LS.mode, "break");
+  lsSetStr(LS.pendingBreak, "1");
+  lsSetStr(LS.breakStartMs, String(Date.now()));
+  lsSetStr(LS.breakTotalSec, String(totalSec));
+
+  // readySec는 참고용(표시)으로 남겨도 되고 없어도 됨. 여기선 남김.
+  lsSetStr(LS.breakReadySec, String(totalSec));
+}
+
+function clearBreakStored() {
+  lsDel(LS.pendingBreak);
+  lsDel(LS.breakStartMs);
+  lsDel(LS.breakTotalSec);
+  lsDel(LS.breakReadySec);
+}
+
+function switchToFocusPending() {
+
+  if (timerId) {
+    clearInterval(timerId);
+    timerId = null;
+  }
+
+  clearBreakStored();
+  lsSetStr(LS.mode, "focus");
+
+  mode = "focus";
+  sessionStart = null;
+
+  plannedFocusMin = parseInt(el("focusMinutes").value || "25", 10);
+  remainingSec = plannedFocusMin * 60;
+
+  setModePill();
+  setButtons(false);
+  setDisplay();
+  updateStatusBar();
+}
+
 // ====== 타이머 동작 ======
 function startTimer() {
   if (timerId) return;
@@ -312,7 +340,8 @@ function startTimer() {
       sessionStart = nowIsoLocal();
     }
   } else {
-    remainingSec = Math.max(1, remainingSec);
+    // break 모드에서는 이미 대기 시간(remainingSec)을 표시 중이므로 리셋하지 않음
+    if (remainingSec <= 0) remainingSec = plannedBreakMin * 60;
   }
 
   setModePill();
@@ -320,7 +349,6 @@ function startTimer() {
 
   timerId = setInterval(() => {
     remainingSec -= 1;
-
     updateStatusBar({ mode, remainingSec });
 
     if (remainingSec <= 0) {
@@ -330,14 +358,17 @@ function startTimer() {
       timerId = null;
 
       if (mode === "focus") {
+        // ✅ Focus 완료 → 세션 저장 + Break 모드로 전환(대기/자동)
         beep();
         notify("집중 끝!", "휴식하거나 다음 세션을 시작해.");
-        autoSaveFocusAndMaybeBreak();
+        autoSaveFocusThenSwitchToBreak();
       } else {
+        // ✅ Break 완료 → Focus 모드로 전환(대기)
         beep();
         notify("휴식 끝!", "다음 집중을 시작해볼까?");
-        finishBreakToFocus();
+        switchToFocusPending();
       }
+
       updateStatusBar();
       return;
     }
@@ -360,6 +391,7 @@ function pauseTimer() {
 
 function finishBtnAction() {
   if (mode === "focus") {
+    // ✅ 수동 Finish도: 기록 남기고 Break로 전환(대기/자동)
     const usedSec = (plannedFocusMin * 60) - remainingSec;
     const usedMin = Math.max(1, Math.floor(usedSec / 60));
 
@@ -367,118 +399,107 @@ function finishBtnAction() {
     el("sessionEndTs").value = nowIsoLocal();
     el("sessionMinutes").value = usedMin;
 
+    // 다음은 Break(대기). 자동휴식 ON이면 자동 시작하도록 준비.
+    const totalBreakSec = plannedBreakMin * 60;
+    if (lsGetBool(LS.autoBreak, false)) prepareBreakAutoStart(totalBreakSec);
+    else prepareBreakPending(totalBreakSec);
+
+    // UI는 제출 전에 정리(리로드되므로 크게 중요하진 않음)
     sessionStart = null;
-    remainingSec = plannedFocusMin * 60;
+    mode = "break";
+    remainingSec = totalBreakSec;
+    setModePill();
     setButtons(false);
     setDisplay();
-
-    // 수동 종료에서는 자동휴식 강제하지 않음
-    lsSetStr(LS.mode, "focus");
-    lsDel(LS.pendingBreak);
-    lsDel(LS.breakStartMs);
-    lsDel(LS.breakTotalSec);
-
     updateStatusBar();
+
     el("sessionForm").submit();
   } else {
-    finishBreakToFocus();
+    // break 중 Skip = 휴식 종료 → focus로 전환(대기)
+    if (timerId) { clearInterval(timerId); timerId = null; }
+    switchToFocusPending();
   }
 }
 
-function autoSaveFocusAndMaybeBreak() {
+function autoSaveFocusThenSwitchToBreak() {
   if (isSubmitting) return;
   isSubmitting = true;
 
+  // focus 세션 저장
   el("sessionStartTs").value = sessionStart || nowIsoLocal();
   el("sessionEndTs").value = nowIsoLocal();
   el("sessionMinutes").value = plannedFocusMin;
 
   sessionStart = null;
 
-  const autoBreak = lsGetBool(LS.autoBreak, false);
-  if (autoBreak) {
-    lsSetStr(LS.pendingBreak, "1");
-    lsSetStr(LS.breakStartMs, String(Date.now()));
-    lsSetStr(LS.breakTotalSec, String(plannedBreakMin * 60));
-    lsSetStr(LS.mode, "break");
-  } else {
-    lsSetStr(LS.mode, "focus");
-    lsDel(LS.pendingBreak);
-    lsDel(LS.breakStartMs);
-    lsDel(LS.breakTotalSec);
-  }
+  // ✅ 저장 후 Break로 전환 (autoBreak는 "자동 시작" 여부만 결정)
+  const totalBreakSec = plannedBreakMin * 60;
+  if (lsGetBool(LS.autoBreak, false)) prepareBreakAutoStart(totalBreakSec);
+  else prepareBreakPending(totalBreakSec);
 
-  mode = "focus";
+  // UI 정리(리로드되지만 깔끔하게)
+  mode = "break";
+  remainingSec = totalBreakSec;
   setModePill();
-  remainingSec = plannedFocusMin * 60;
   setButtons(false);
   setDisplay();
-
   updateStatusBar();
+
   el("sessionForm").submit();
 }
 
-function resumeBreakIfNeeded() {
-  const pending = lsGetStr(LS.pendingBreak, "0") === "1";
-  const autoBreak = lsGetBool(LS.autoBreak, false);
+function restoreModeOnLoad() {
   const savedMode = lsGetStr(LS.mode, "focus");
+  const autoBreak = lsGetBool(LS.autoBreak, false);
 
-  if (!(pending && autoBreak && savedMode === "break")) {
-    mode = "focus";
+  if (savedMode === "break") {
+    mode = "break";
     setModePill();
-    plannedFocusMin = parseInt(el("focusMinutes").value || "25", 10);
-    remainingSec = plannedFocusMin * 60;
+
+    // auto-start 조건: autoBreak ON + pendingBreak=1 + breakStartMs/totalSec 존재
+    const pending = lsGetStr(LS.pendingBreak, "0") === "1";
+    const startMs = parseInt(lsGetStr(LS.breakStartMs, "0"), 10);
+    const totalSec = parseInt(lsGetStr(LS.breakTotalSec, "0"), 10);
+
+    if (autoBreak && pending && startMs > 0 && totalSec > 0) {
+      const elapsedSec = Math.floor((Date.now() - startMs) / 1000);
+      const left = Math.max(0, totalSec - elapsedSec);
+      remainingSec = left;
+
+      setButtons(false);
+      setDisplay();
+      updateStatusBar();
+
+      if (remainingSec <= 0) {
+        // 휴식 시간이 이미 지났으면 즉시 focus로
+        switchToFocusPending();
+      } else {
+        // 자동으로 휴식 시작
+        startTimer();
+      }
+      return;
+    }
+
+    // manual pending: breakReadySec 우선 사용, 없으면 입력값 사용
+    const readySec = parseInt(lsGetStr(LS.breakReadySec, "0"), 10);
+    if (readySec > 0) remainingSec = readySec;
+    else {
+      plannedBreakMin = parseInt(el("breakMinutes").value || "5", 10);
+      remainingSec = plannedBreakMin * 60;
+    }
+
     setButtons(false);
     setDisplay();
     updateStatusBar();
     return;
   }
 
-  const startMs = parseInt(lsGetStr(LS.breakStartMs, "0"), 10);
-  const totalSec = parseInt(lsGetStr(LS.breakTotalSec, "300"), 10);
-
-  const elapsedSec = Math.floor((Date.now() - startMs) / 1000);
-  const left = Math.max(0, totalSec - elapsedSec);
-
-  mode = "break";
-  setModePill();
-
-  remainingSec = left;
-  setButtons(false);
-  setDisplay();
-
-  if (remainingSec <= 0) {
-    lsDel(LS.pendingBreak);
-    lsDel(LS.breakStartMs);
-    lsDel(LS.breakTotalSec);
-    lsSetStr(LS.mode, "focus");
-
-    beep();
-    notify("휴식 끝!", "다음 집중을 시작해볼까?");
-    finishBreakToFocus();
-    return;
-  }
-
-  updateStatusBar();
-  startTimer(); // 자동으로 휴식 시작
-}
-
-function finishBreakToFocus() {
-  if (timerId) {
-    clearInterval(timerId);
-    timerId = null;
-  }
-
-  lsDel(LS.pendingBreak);
-  lsDel(LS.breakStartMs);
-  lsDel(LS.breakTotalSec);
-  lsSetStr(LS.mode, "focus");
-
+  // focus 모드
   mode = "focus";
+  setModePill();
   plannedFocusMin = parseInt(el("focusMinutes").value || "25", 10);
   remainingSec = plannedFocusMin * 60;
 
-  setModePill();
   setButtons(false);
   setDisplay();
   updateStatusBar();
@@ -503,6 +524,5 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  resumeBreakIfNeeded();
-  updateStatusBar();
+  restoreModeOnLoad();
 });
