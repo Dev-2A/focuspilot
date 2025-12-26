@@ -133,12 +133,15 @@ def ensure_schema() -> None:
 # Queries (date filtering)
 # -----------------------------
 def q_sessions_for_date(conn: sqlite3.Connection, d: str) -> List[sqlite3.Row]:
+    cols = [r["name"] for r in conn.execute("PRAGMA table_info(sessions)").fetchall()]
+    if "date" in cols:
+        return conn.execute(
+            "SELECT * FROM sessions WHERE date=? ORDER BY start_ts DESC",
+            (d,),
+        ).fetchall()
+
     return conn.execute(
-        """
-        SELECT * FROM sessions
-        WHERE substr(start_ts,1,10)=?
-        ORDER BY start_ts DESC
-        """,
+        "SELECT * FROM sessions WHERE substr(start_ts,1,10)=? ORDER BY start_ts DESC",
         (d,),
     ).fetchall()
 
@@ -267,11 +270,21 @@ def add_session():
     if not start_ts or not end_ts or minutes <= 0:
         return redirect(url_for("index"))
 
+    session_date = start_ts[:10]  # "YYYY-MM-DD"
+
     with get_db() as conn:
-        conn.execute(
-            "INSERT INTO sessions(start_ts, end_ts, minutes) VALUES(?,?,?)",
-            (start_ts, end_ts, minutes),
-        )
+        # ✅ 기존 DB 스키마 호환: sessions.date 컬럼이 있으면 같이 넣는다.
+        cols = [r["name"] for r in conn.execute("PRAGMA table_info(sessions)").fetchall()]
+        if "date" in cols:
+            conn.execute(
+                "INSERT INTO sessions(date, start_ts, end_ts, minutes) VALUES(?,?,?,?)",
+                (session_date, start_ts, end_ts, minutes),
+            )
+        else:
+            conn.execute(
+                "INSERT INTO sessions(start_ts, end_ts, minutes) VALUES(?,?,?)",
+                (start_ts, end_ts, minutes),
+            )
         conn.commit()
 
     return redirect(url_for("index"))
